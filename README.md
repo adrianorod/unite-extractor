@@ -1,2 +1,2 @@
 # unite-extractor
-Data extractor for unite api
+Browser extension that make easy extract data from Unite API

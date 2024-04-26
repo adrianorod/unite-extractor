@@ -1,0 +1,13 @@
+{
+  "name": "Unite Extractor",
+  "version": "1.0.0",
+  "description": "Browser extension that make easy extract data from Unite API",
+  "manifest_version": 3,
+  "author": "Adriano Rodd",
+  "action": {
+    "default_popup": "index.html",
+    "default_title": "Unite Extractor",
+    "default_icon": "favicon.png"
+  },
+  "permissions": ["activeTab", "scripting", "tabs"]
+}
