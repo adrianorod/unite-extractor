@@ -9,5 +9,11 @@
     "default_title": "Unite Extractor",
     "default_icon": "favicon.png"
   },
-  "permissions": ["activeTab", "scripting", "tabs"]
+  "permissions": ["activeTab", "scripting", "tabs"],
+  "content_scripts": [
+    {
+      "matches": ["https://*.uniteapi.dev/*"],
+      "js": ["./src/extract.js"]
+    }
+  ]
 }

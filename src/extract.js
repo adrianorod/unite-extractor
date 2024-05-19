@@ -5,6 +5,8 @@
     historyContainer: '.sc-17dce764-1.dKRkDg > div > div',
     matchClassName: '',
     dateAndResultContainer: '.sc-20c903f9-3.bdnait',
+    pokemon: 'img[alt="Played pokemon"]',
+    playersContainer: '.sc-a6584c64-0.dyvhyv',
   };
 
   const state = {
@@ -37,8 +39,11 @@
 
     expandAllMatches(matches);
     const matchData = getMatchData(matches);
+
+    console.log(matchData);
+
     dataToHTML(matchData);
-  };
+  }
 
   function getValidMatches(container) {
     const { childNodes: matches } = container;
@@ -53,28 +58,73 @@
 
   function expandAllMatches(matches) {
     matches.forEach((match) => {
+      // if (match.nextSibling !== null || match.nextSibling.id !== '') return;
       match.click();
     });
   }
 
   function getMatchData(matches) {
-    return matches
-      .map((match) => {
+    const matchData = [];
+
+    matches
+      .forEach((match) => {
+        if (!match) return;
+
         const dateAndResult = match.querySelectorAll(IDs.dateAndResultContainer);
         const filterValue = (dateAndResult[0].childNodes[2] || dateAndResult[0].childNodes[1]).textContent.split(' ')[0].toLowerCase();
 
-        if (!state.filters.includes(filterValue)) return undefined;
+        if (state.filters.length > 0 && !state.filters.includes(filterValue)) return;
 
         const result = dateAndResult[0].childNodes[0].textContent;
         const date = dateAndResult[1].childNodes[0].textContent;
-        const dataContainer = match.nextSibling;
+        const { team, opponentTeam } = getAllPlayersData(match.nextSibling);
 
-        return {
-          date,
-          result,
-        };
-      })
-      .filter((match) => match !== undefined);
+        team.forEach((player, index) => {
+          const finalData = {};
+
+          finalData.result = result;
+          finalData.date = date;
+          finalData.pokemon = player.pokemon;
+          finalData.opponentPokemon = opponentTeam[index].pokemon;
+
+          matchData.push(finalData);
+        });
+      });
+
+    return matchData;
+  }
+
+  function getAllPlayersData(container) {
+    if (!container) return;
+
+    const players = Array.from(container.querySelectorAll('table > tr'))
+        .filter((item, index) => index !== 0 || index !== 6);
+    const firstTeam = []
+    const secondTeam = []
+
+    players.forEach((item, index) => {
+      const player = getPlayerData(item);
+
+      if (index <= 4) {
+        firstTeam.push(player);
+      } else {
+        secondTeam.push(player);
+      }
+    });
+
+    return { team: firstTeam, opponentTeam: secondTeam };
+  }
+
+  function getPlayerData(container) {
+    const player = {};
+
+    player.pokemon = getPokemon(container);
+  }
+
+  function getPokemon(container) {
+    const item = container.querySelector(IDs.pokemon).src.split('.png')[0].split('_');
+
+    return item[item.length - 1];
   }
 
   function dataToHTML(data) {
@@ -148,5 +198,5 @@
     const blobUrl = URL.createObjectURL(blob);
 
     window.open(blobUrl, "_blank");
-  };
+  }
 })();

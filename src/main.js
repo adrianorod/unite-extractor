@@ -8,15 +8,8 @@
 
   document.addEventListener('DOMContentLoaded', async () => {
     try {
-      const scripts = await chrome.scripting.getRegisteredContentScripts();
-      const scriptIds = scripts.map((script) => script.id);
-      if (scriptIds.length > 0) chrome.scripting.unregisterContentScripts(scriptIds);
-
       const buttonExtract = document.querySelector(elements.buttonExtract);
       buttonExtract.addEventListener('click', extract);
-
-      const currentTab = await getCurrentTab();
-      chrome.scripting.executeScript({ target: { tabId: currentTab.id }, files: ['./src/extract.js'] });
     } catch (e) {
       showError(e);
     }
