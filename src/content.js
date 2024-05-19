@@ -58,17 +58,23 @@
 
   function expandAllMatches(matches) {
     matches.forEach((match) => {
-      // if (match.nextSibling !== null || match.nextSibling.id !== '') return;
+      if (match.nextSibling !== null && match.nextSibling.id === '') return;
       match.click();
     });
   }
 
   function getMatchData(matches) {
+    if (!matches?.length) {
+      throw new Error(`getMatchData: matches is ${typeof matches}`);
+    }
+
     const matchData = [];
 
     matches
       .forEach((match) => {
-        if (!match) return;
+        if (!match) {
+          throw new Error(`getMatchData: single match is ${typeof match}`);
+        }
 
         const dateAndResult = match.querySelectorAll(IDs.dateAndResultContainer);
         const filterValue = (dateAndResult[0].childNodes[2] || dateAndResult[0].childNodes[1]).textContent.split(' ')[0].toLowerCase();
@@ -95,7 +101,9 @@
   }
 
   function getAllPlayersData(container) {
-    if (!container) return;
+    if (!container) {
+      throw new Error(`getAllPlayersData: container is ${typeof container}`);
+    }
 
     const players = Array.from(container.querySelectorAll('table > tr'))
         .filter((item, index) => index !== 0 || index !== 6);
