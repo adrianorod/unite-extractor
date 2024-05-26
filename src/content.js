@@ -7,6 +7,16 @@
     dateAndResultContainer: '.sc-20c903f9-3.bdnait',
     pokemon: 'img[alt="Played pokemon"]',
     playersContainer: '.sc-a6584c64-0.dyvhyv',
+    playerRow: 'table > tbody > tr',
+    playerName: '.sc-7bda52f2-3.bjWUWj',
+    points: '.sc-7bda52f2-3.bjWUWj',
+    killsAssists: '.sc-7bda52f2-3.bjWUWj',
+    dmgGiven: '.sc-7bda52f2-3.bjWUWj',
+    dmgGivenRate: '.sc-71f8e1a4-0.iDyfuw',
+    dmgReceived: '.sc-7bda52f2-3.bjWUWj',
+    dmgReceivedRate: '.sc-71f8e1a4-0.iDyfuw',
+    heal: '.sc-7bda52f2-3.bjWUWj',
+    healRate: '.sc-71f8e1a4-0.iDyfuw',
   };
 
   const state = {
@@ -32,15 +42,13 @@
   });
 
   // ACTIONS
-  function execute() {
+  async function execute() {
     const target = document.querySelector(IDs.playerTarget)
     const historyContainer = document.querySelector(IDs.historyContainer);
     const matches = getValidMatches(historyContainer);
 
-    expandAllMatches(matches);
-    const matchData = getMatchData(matches);
-
-    console.log(matchData);
+    const expandedMatches = await expandAllMatches(matches);
+    const matchData = getMatchData(expandedMatches);
 
     dataToHTML(matchData);
   }
@@ -57,15 +65,22 @@
   }
 
   function expandAllMatches(matches) {
-    matches.forEach((match) => {
-      if (match.nextSibling !== null && match.nextSibling.id === '') return;
-      match.click();
-    });
+    return new Promise((res) => {
+      matches.forEach((match) => {
+        if (match.nextSibling !== null && match.nextSibling.id === '') return;
+        match.click();
+      });
+
+      setTimeout(() => {
+        const historyContainer = document.querySelector(IDs.historyContainer);
+        res(getValidMatches(historyContainer));
+      }, 5000);
+    })
   }
 
   function getMatchData(matches) {
     if (!matches?.length) {
-      throw new Error(`getMatchData: matches is ${typeof matches}`);
+      throw new Error(`getMatchData: matches is ${matches}`);
     }
 
     const matchData = [];
@@ -73,7 +88,7 @@
     matches
       .forEach((match) => {
         if (!match) {
-          throw new Error(`getMatchData: single match is ${typeof match}`);
+          throw new Error(`getMatchData: single match is ${match}`);
         }
 
         const dateAndResult = match.querySelectorAll(IDs.dateAndResultContainer);
@@ -89,9 +104,10 @@
           const finalData = {};
 
           finalData.result = result;
-          finalData.date = date;
-          finalData.pokemon = player.pokemon;
-          finalData.opponentPokemon = opponentTeam[index].pokemon;
+          finalData.date = date.split(' ')[0].replaceAll('-', '/');
+
+          finalData.player = team[index];
+          finalData.opponentPlayer = opponentTeam[index];
 
           matchData.push(finalData);
         });
@@ -102,13 +118,18 @@
 
   function getAllPlayersData(container) {
     if (!container) {
-      throw new Error(`getAllPlayersData: container is ${typeof container}`);
+      throw new Error(`getAllPlayersData: container is ${container}`);
     }
 
-    const players = Array.from(container.querySelectorAll('table > tr'))
-        .filter((item, index) => index !== 0 || index !== 6);
-    const firstTeam = []
-    const secondTeam = []
+    const players = Array.from(container.querySelectorAll(IDs.playerRow))
+        .filter((item, index) => index !== 0 && index !== 6);
+
+    if (players.length !== 10) {
+      throw new Error(`getAppPlayersData: error obtaining players rows`);
+    }
+
+    const firstTeam = [];
+    const secondTeam = [];
 
     players.forEach((item, index) => {
       const player = getPlayerData(item);
@@ -127,12 +148,128 @@
     const player = {};
 
     player.pokemon = getPokemon(container);
+    player.player = getPlayerName(container);
+    player.points = getPoints(container);
+    player.kills = getKills(container);
+    player.assists = getAssists(container);
+    player.dmgGiven = getDmgGiven(container);
+    player.dmgGivenRate = getDmgGivenRate(container);
+    player.dmgReceived = getDmgReceived(container);
+    player.dmgReceivedRate = getDmgReceivedRate(container);
+    player.heal = getHeal(container);
+    player.healRate = getHealRate(container);
+
+    return player;
   }
 
   function getPokemon(container) {
-    const item = container.querySelector(IDs.pokemon).src.split('.png')[0].split('_');
+    try {
+      const item = container.querySelector(IDs.pokemon).src.split('.png')[0].split('_');
+      return item[item.length - 1];
+    } catch {
+      console.warn('getPokemon: error obtaining pokemon name');
+      return 'undefined';
+    }
+  }
 
-    return item[item.length - 1];
+  function getPlayerName(container) {
+    try {
+      const item = container.querySelector(IDs.playerName);
+      return item.innerText;
+    } catch {
+      console.warn('getPlayerName: error obtaining player name');
+      return 'undefined';
+    }
+  }
+
+  function getPoints(container) {
+    try {
+      const item = container.querySelectorAll(IDs.points)[1];
+      return item.innerText;
+    } catch {
+      console.warn('getPoints: error obtaining player points');
+      return 'undefined';
+    }
+  }
+
+  function getKills(container) {
+    try {
+      const item = container.querySelectorAll(IDs.killsAssists)[2];
+      return item.innerText.split(' | ')[0];
+    } catch {
+      console.warn('getKills: error obtaining player kills');
+      return 'undefined';
+    }
+  }
+
+  function getAssists(container) {
+    try {
+      const item = container.querySelectorAll(IDs.killsAssists)[2];
+      return item.innerText.split(' | ')[1];
+    } catch {
+      console.warn('getAssists: error obtaining player assists');
+      return 'undefined';
+    }
+  }
+
+  function getDmgGiven(container) {
+    try {
+      const item = container.querySelectorAll(IDs.dmgGiven)[3];
+      return item.innerText;
+    } catch {
+      console.warn('getDmgGiven: error obtaining player damage given');
+      return 'undefined';
+    }
+  }
+
+  function getDmgGivenRate(container) {
+    try {
+      const item = container.querySelectorAll(IDs.dmgGivenRate)[0];
+      return item.innerText.replace(' ', '');
+    } catch {
+      console.warn('getDmgGivenRate: error obtaining player damage given rate');
+      return 'undefined';
+    }
+  }
+
+  function getDmgReceived(container) {
+    try {
+      const item = container.querySelectorAll(IDs.dmgReceived)[4];
+      return item.innerText;
+    } catch {
+      console.warn('getDmgReceived: error obtaining player damage received');
+      return 'undefined';
+    }
+  }
+
+  function getDmgReceivedRate(container) {
+    try {
+      const item = container.querySelectorAll(IDs.dmgReceivedRate)[1];
+      return item.innerText.replace(' ', '');
+    } catch {
+      console.warn('getDmgReceivedRate: error obtaining player damage received rate');
+      return 'undefined';
+    }
+  }
+
+  function getHeal(container) {
+    try {
+      const item = container.querySelectorAll(IDs.heal)[4];
+      return item.innerText;
+    } catch {
+      console.warn('getHeal: error obtaining player heal');
+      return 'undefined';
+    }
+  }
+
+  function getHealRate(container) {
+    try {
+      const item = container.querySelectorAll(IDs.healRate)[1];
+      return item.innerText.replace(' ', '');
+    } catch {
+      console.warn('getHealRate: error obtaining player heal rate');
+      return 'undefined';
+    }
   }
 
   function dataToHTML(data) {
@@ -145,8 +282,8 @@
         <body>
           <table>
             <tr>
-              <td colspan="12">Team Data</td>
-              <td colspan="10">Opponents Data</td>
+              <td colspan="15">Team Data</td>
+              <td colspan="13">Opponents Data</td>
             </tr>
             <tr>
               <td>Date</td>
@@ -157,14 +294,20 @@
               <td>Kills</td>
               <td>Assists</td>
               <td>Damage Given</td>
+              <td>Damage Given Rate</td>
               <td>Damage Received</td>
+              <td>Damage Received Rate</td>
               <td>Heal</td>
+              <td>Heal Rate</td>
               <td>Draft priority</td>
               <td>Bans</td>
               <td>Bans</td>
               <td>Draft priority</td>
+              <td>Heal Rate</td>
               <td>Heal</td>
+              <td>Damage Received Rate</td>
               <td>Damage Received</td>
+              <td>Damage Given Rate</td>
               <td>Damage Given</td>
               <td>Assists</td>
               <td>Kills</td>
@@ -172,30 +315,36 @@
               <td>Pokemon</td>
               <td>Player</td>
             </tr>
-            ${data.map((item) => (
+            ${data.map(({ date, result, player, opponentPlayer }) => (
               `<tr>
-                <td>${item.date}</td>
-                <td>${item.result}</td>
-                <td>${item.player}</td>
-                <td>${item.pokemon}</td>
-                <td>${item.points}</td>
-                <td>${item.kills}</td>
-                <td>${item.assists}</td>
-                <td>${item.dmgGiven}</td>
-                <td>${item.dmgReceived}</td>
-                <td>${item.heal}</td>
-                <td>${item.draftPriority}</td>
-                <td>${item.bans}</td>
-                <td>${item.opponnetBans}</td>
-                <td>${item.opponentDraftPriority}</td>
-                <td>${item.opponentHeal}</td>
-                <td>${item.opponentDmgReceived}</td>
-                <td>${item.opponentDmgGiven}</td>
-                <td>${item.opponentAssists}</td>
-                <td>${item.opponentKills}</td>
-                <td>${item.opponentPoints}</td>
-                <td>${item.opponentPokemon}</td>
-                <td>${item.opponentPlayer}</td>
+                <td>${date}</td>
+                <td>${result}</td>
+                <td>${player.player}</td>
+                <td>${player.pokemon}</td>
+                <td>${player.points}</td>
+                <td>${player.kills}</td>
+                <td>${player.assists}</td>
+                <td>${player.dmgGiven}</td>
+                <td>${player.dmgGivenRate}</td>
+                <td>${player.dmgReceived}</td>
+                <td>${player.dmgReceivedRate}</td>
+                <td>${player.heal}</td>
+                <td>${player.healRate}</td>
+                <td>${player.draftPriority}</td>
+                <td>${player.bans}</td>
+                <td>${opponentPlayer.bans}</td>
+                <td>${opponentPlayer.draftPriority}</td>
+                <td>${opponentPlayer.healRate}</td>
+                <td>${opponentPlayer.heal}</td>
+                <td>${opponentPlayer.dmgReceivedRate}</td>
+                <td>${opponentPlayer.dmgReceived}</td>
+                <td>${opponentPlayer.dmgGivenRate}</td>
+                <td>${opponentPlayer.dmgGiven}</td>
+                <td>${opponentPlayer.assists}</td>
+                <td>${opponentPlayer.kills}</td>
+                <td>${opponentPlayer.points}</td>
+                <td>${opponentPlayer.pokemon}</td>
+                <td>${opponentPlayer.player}</td>
               </tr>`
             ))}
           </table>
