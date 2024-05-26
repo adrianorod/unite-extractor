@@ -92,9 +92,9 @@
         }
 
         const dateAndResult = match.querySelectorAll(IDs.dateAndResultContainer);
-        const filterValue = (dateAndResult[0].childNodes[2] || dateAndResult[0].childNodes[1]).textContent.split(' ')[0].toLowerCase();
+        const filterValue = (dateAndResult[0].childNodes[2] || dateAndResult[0].childNodes[1])?.textContent.split(' ')[0].toLowerCase();
 
-        if (state.filters.length > 0 && !state.filters.includes(filterValue)) return;
+        if (filterValue && state.filters.length > 0 && !state.filters.includes(filterValue)) return;
 
         const result = dateAndResult[0].childNodes[0].textContent;
         const date = dateAndResult[1].childNodes[0].textContent;
